@@ -1,5 +1,5 @@
 // Test hashmap was left in so I could upload quicker and make sure the use
-// of my front end worked
+// of my front end worked. If needed, feel free to change the " test.put " or "test.get" to fit the backend or testing procedure
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;
