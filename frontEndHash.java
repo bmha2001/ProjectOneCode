@@ -1,13 +1,12 @@
-// Test hashmap was left in so I could upload quicker and make sure the use
-// of my front end worked. If needed, feel free to change the " test.put " or "test.get" to fit the backend or testing procedure
 
+import java.io.File;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 public class frontEndHash <KeyType, ValueType> {
-  private static HashTableMap test = new HashTableMap();
+  public static HashTableMap frontHash = new HashTableMap();
+  private static File file = new File("data1.txt");
+  public static DataLoader dataLoad = new DataLoader(file, frontHash); 
   public static void main(String[] args) {
-    Student a = new Student(9079118056L, "eng", 2022);
-    test.put("a", a);
     Scanner sc = new Scanner(System.in);
     System.out.println("Type L to lookup a student's record.");
     System.out.println("Type A to add a new student into the records.");
@@ -26,7 +25,7 @@ public class frontEndHash <KeyType, ValueType> {
           Scanner removeScanner = new Scanner(System.in);
           System.out.println("Enter name of student to remove");
           String removeStudent = removeScanner.nextLine();
-         if(test.remove(removeStudent) == null) {
+         if(frontHash.remove(removeStudent) == null) {
            throw new NoSuchElementException();
          }
         }
@@ -53,7 +52,7 @@ public class frontEndHash <KeyType, ValueType> {
     System.out.println("Enter M for major.");
     System.out.println("Enter I for ID");
     String lookupInfo = lookupScanner2.next();
-   Student returnStudent = (Student)test.get(lookupName);        
+   Student returnStudent = (Student)frontHash.get(lookupName);        
    if(lookupInfo.equalsIgnoreCase("Y")) {
      System.out.println(returnStudent.getGradYear());
    }
@@ -79,7 +78,7 @@ public class frontEndHash <KeyType, ValueType> {
     System.out.println("Enter student's graduation year");
     Integer addGrad = addScanner4.nextInt();
     Student newStudent = new Student(addID, addMajor, addGrad);
-    test.put(addName, newStudent);
+    frontHash.put(addName, newStudent);
   }
 
 }
