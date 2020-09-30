@@ -1,198 +1,239 @@
-
-import java.util.NoSuchElementException;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
-/**
- * 
- * @author ananth
- *
- * @param <KeyType>
- * @param <ValueType>
- */
 public class HashTableMap<KeyType, ValueType> implements MapADT<KeyType, ValueType> {
 
-	private int size; // maximum number of key value pairs the array can hold
-	private int capacity; // maximum number of key value pairs the array can hold
-	private LinkedList<Element>[] hashArr; // array that holds the key value pairs
+  private LinkedList<Node<KeyType, ValueType>>[] values;
 
-	/**
-	 * Constructor that gets invoked if the capacity is specified. Assigns the class
-	 * array to have the specified capacity
-	 * 
-	 * @param capacity - the maximum number of key value pairs the array can hold
-	 */
-	public HashTableMap(int capacity) {
+  private int size = 0;
+  private int capacity;
 
-		hashArr = new LinkedList[capacity]; // creates an array with the specified capacity
-		this.capacity = capacity;
-		for (int i = 0; i < capacity; i++) {
-			hashArr[i] = new LinkedList<>();
-		}
-		size = 0;
-	}
+  @SuppressWarnings("unchecked")
+  public HashTableMap(int capacity) {
+    values = new LinkedList[capacity];
+    this.capacity = capacity;
+  }
 
-	/**
-	 * 
-	 * Constructor that gets invoked if the capacity is not specified. Assigns the
-	 * class array to hold at least 10 key value pairs by default.
-	 * 
-	 */
-	public HashTableMap() {
+  @SuppressWarnings("unchecked")
+  public HashTableMap() {
+    values = new LinkedList[10];
+    this.capacity = 10;
+  }
 
-		hashArr = new LinkedList[10];
-		this.capacity = 10; // assigns capacity 10
-		for (int i = 0; i < capacity; i++) {
-			hashArr[i] = new LinkedList<>();
-		}
-		size = 0;
-	}
+  /**
+   * Returns true if passed key-value pair was successfully inserted into the hash table, returns
+   * false if key already exists
+   * 
+   * @param key   the key associated with the value
+   * @param value the value associated with the key
+   * 
+   * @return true if key-value pair was successfully placed into the table, false if key already
+   *         existed
+   */
+  @Override
+  public boolean put(KeyType key, ValueType value) {
 
-	/**
-	 * If the load capacity of 80% is exceeded, creates a new array with double the
-	 * capacity and adds the values from the old array to it
-	 */
-	private void rehash() {
+    int index = Math.abs(key.hashCode()) % capacity;
+    Node<KeyType, ValueType> addMe = new Node<KeyType, ValueType>(key, value);
+    
+    if(values[index] != null ) {
+      Node<KeyType, ValueType> temp = values[index].get(0);
+      while (temp != null) {
+        if (temp.getKey().equals(key))
+          return false;
+        temp = temp.getNext();
+      }
+    }
 
-		int newCapacity = 2 * this.capacity; // doubles the capacity
-		LinkedList<Element>[] newArr = new LinkedList[newCapacity]; // creates a new array with the doubled
-																			// capacity
-		for (int i = 0; i < newCapacity; i++) {
-			newArr[i] = new LinkedList();
-		}
 
-		for (int i = 0; i < this.capacity; i++) {
-			for (int j = 0; j < hashArr[i].size(); j++) {
-				Element obj = hashArr[i].get(j);
-				newArr[Math.abs(obj.getKey().hashCode() % this.capacity)].add(obj);
-			}
-		}
-		this.hashArr = newArr;
-		this.capacity = newCapacity;
-	}
+    if (values[index] == null) {
+      LinkedList<Node<KeyType, ValueType>> add = new LinkedList<>();
+      values[index] = add;
+      add.add(addMe);
+    } else {
 
-	/**
-	 * Inserts key pair if the pair does not already exist into the array
-	 * 
-	 * @param key
-	 * @param value
-	 * @return true if key pair was inserted and false if not
-	 */
-	@Override
-	public boolean put(KeyType key, ValueType value) {
+      values[index].add(addMe);
+      values[index].get(values[index].size() - 2).setNext(addMe);
+    }
 
-		if ((double) (this.size + 1) / (this.capacity) >= 0.8) { // checks to see if the load capacity exceeds 80%. If
-																	// yes it rehashes
-			rehash();
-		}
+    size++;
 
-		int hashKey = Math.abs((key.hashCode()) % capacity);
+    double loadFactor = (double) size / capacity;
+    if (loadFactor * 100 >= 80) {
+      rehash(); // private helper method
+    }
 
-		LinkedList<Element> list = hashArr[hashKey];
+    return true;
+  }
 
-		for (Element x : list) {
-			if (x.getKey().equals(key)) {
-				return false;
-			}
-		}
+  /**
+   * Helper method to rehash hash table when load factor >= 80% Called in the put(Key) method.
+   */
+  @SuppressWarnings("unchecked")
+  private void rehash() {
+    int newCapacity = 2 * capacity;
+    LinkedList<Node<KeyType, ValueType>>[] temp = new LinkedList[newCapacity];
+    size = 0;
 
-		list.add(new Element<>(key, value));
-		++size;
-		return true;
-	}
+    // traverses hash table
+    for (int i = 0; i < capacity; i++) {
+      // if linked list is found, must iterate through linked list
+      if (values[i] != null) {
+        Node<KeyType, ValueType> head = values[i].getFirst();
+        // linked list traversal
+        while (head != null) {
+          int index = Math.abs(head.getKey().hashCode()) % newCapacity;
+          Node<KeyType, ValueType> reset;
+          if (temp[index] == null) {
+            LinkedList<Node<KeyType, ValueType>> add = new LinkedList<>();
+            temp[index] = add;
+            add.add(head);
+            reset = head;
+            head = head.getNext();
+            reset.setNext(null);
+          } else {
+            temp[index].add(head);
+            temp[index].get(temp[index].size() - 2).setNext(head);
+            head = head.getNext();
+          }
+          size++;
+         
 
-	/**
-	 * Gets the key pair value specified if it exists in the hash table
-	 * 
-	 * @param key
-	 * @return
-	 * @throws NoSuchElementException if key not found
-	 */
-	@Override
-	public ValueType get(KeyType key) throws NoSuchElementException {
+        }
+      }
 
-		if (!(containsKey(key))) {
-			throw new NoSuchElementException("Item does not exist in the HashMapTable.");
-		} else {
+    }
+    capacity = newCapacity;
+    values = temp;
 
-			int hashKey = Math.abs((key.hashCode()) % capacity);
+  }
 
-			LinkedList<Element> list = hashArr[hashKey];
+  /**
+   * Returns the value associated with a passed key
+   * 
+   * @param key the key to the value that is to be returned
+   * @throws NoSuchElementException if the key-value pair does not exist
+   * @return the value associated with the key
+   */
+  @Override
+  public ValueType get(KeyType key) throws NoSuchElementException {
+    if (!containsKey(key)) {
+      throw new NoSuchElementException("Error");
+    }
+    ValueType value = null;
 
-			for (Element x : list) {
-				if (x.getKey().equals(key)) {
-					return (ValueType) x.getValue();
-				}
-			}
-		}
-		return null;
-	}
+    for (int i = 0; i < capacity; i++) {
+      if (values[i] != null) {
+        Node<KeyType, ValueType> head = values[i].getFirst();
+        while (head != null) {
+          if (head.getKey().equals(key)) {
+            value = head.getValue();
+            break;
+          }
+          head = head.getNext();
+        }
+      }
+    }
 
-	/**
-	 * Returns the number of key value pairs in the table
-	 * 
-	 * @return
-	 */
-	@Override
-	public int size() {
-		return size;
-	}
+    return value;
+  }
 
-	/**
-	 * checks if key specified exists
-	 * 
-	 * @param key
-	 * @return true if key exists on the table else false
-	 */
-	@Override
-	public boolean containsKey(KeyType key) {
+  /**
+   * Returns the number of elements in the hash table
+   * 
+   * @return size of hash table
+   */
+  @Override
+  public int size() {
+    return size;
+  }
 
-		int hashKey = Math.abs((key.hashCode()) % capacity);
-		LinkedList<Element> list = hashArr[hashKey];
+  /**
+   * Determines if passed key is in the current hash table
+   * 
+   * @param key the key to be checked if it already exists in the table
+   * @return true if the table contains the key, false otherwise
+   */
+  @Override
+  public boolean containsKey(KeyType key) {
+    for (int i = 0; i < capacity; i++) {
+      if (values[i] != null) {
+        Node<KeyType, ValueType> temp = values[i].getFirst();
+        while (temp != null) {
+          if (temp.getKey().equals(key)) {
+            return true;
+          }
+          temp = temp.getNext();
+        }
+      }
+    }
 
-		for (Element x : list) { // checks if key specified exists
-			if (x.getKey().equals(key)) {
-				return true;
-			}
-		}
+    return false;
+  }
 
-		return false;
-	}
+  /**
+   * Removes key-value pair found at specified key from the hash table
+   *
+   * @param key the key that is the key-value pair to be removed
+   * @return null if the key does not exists, otherwise returns the value associated with the key
+   *         that is being removed
+   */
+  @Override
+  public ValueType remove(KeyType key) {
+    if (!containsKey(key)) {
+      return null;
+    }
 
-	/**
-	 * 
-	 * @param key
-	 * @return value of ValueType that corresponds to the key
-	 */
-	@Override
-	public ValueType remove(KeyType key) {
+    ValueType value = null;
+    for (int i = 0; i < capacity; i++) {
+      if (values[i] != null) {
+        Node<KeyType, ValueType> head = values[i].getFirst();
+        Node<KeyType, ValueType> temp = null;
+        while (head != null) {
+          if (head.getKey().equals(key)) {
+            value = head.getValue();
+            if (temp != null) {
+              temp.setNext(head.getNext());
+            } else {
+              values[i].set(0, head.getNext());
+            }
+            values[i].remove(head);
+            break;
+          }
+          temp = head;
+          head = head.getNext();
+        }
+      }
+    }
 
-		ValueType value = null;
+    size--;
+    return value;
+  }
 
-		int hashKey = Math.abs((key.hashCode()) % capacity);
-		LinkedList<Element> list = hashArr[hashKey];
+  /**
+   * Clears Hash Table of all key-value pairs
+   */
+  @Override
+  public void clear() {
+    for (int i = 0; i < capacity; i++) {
+      if (values[i] != null)
+        values[i] = null;
+    }
 
-		for (Element x : list) {
-			if (x.getKey().equals(key)) {
-				ValueType toRemove = (ValueType) x.getValue();
-				list.remove(x); // removes the specified key pair
-				--size;
-				return toRemove;
-			}
-		}
+    size = 0;
+  }
 
-		return null;
-	}
+  /*
+   * Method to aid testing the rehashing ability
+   * 
+   * @return the capacity of table
+   */
+  public int getCapacity() {
+    return capacity;
+  }
+  
 
-	/**
-	 * clears hash table
-	 */
-	@Override
-	public void clear() {
-
-		for (int i = 0; i < capacity; i++) {
-			hashArr[i] = new LinkedList<Element>();
-		}
-		size = 0;
-	}
 
 }
+
+
